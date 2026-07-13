@@ -1,0 +1,71 @@
+# Base config. Everything overridable via env vars (12-factor).
+# Active profile chosen by SPRING_PROFILES_ACTIVE (dev | staging | prod).
+spring:
+  application:
+    name: webhookrelay
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/webhookrelay}
+    username: ${SPRING_DATASOURCE_USERNAME:relay}
+    password: ${SPRING_DATASOURCE_PASSWORD:relaypw}
+    hikari:
+      # Pool sizing rationale: with a mostly-IO-bound webhook workload and an
+      # instance running on ~2 vCPU, a small pool avoids DB connection saturation
+      # under horizontal scale-out. Tune via env per environment.
+      maximum-pool-size: ${DB_POOL_MAX:10}
+      minimum-idle: ${DB_POOL_MIN_IDLE:2}
+      connection-timeout: 30000
+      max-lifetime: 1800000
+  jpa:
+    hibernate:
+      ddl-auto: validate   # never 'update' — schema owned by Flyway
+    open-in-view: false
+    properties:
+      hibernate.format_sql: false
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    # {vendor} resolves to mysql / postgresql from the datasource, so each DB gets
+    # its own DDL (json vs jsonb, longtext vs text). Keeps the app portable.
+    locations: classpath:db/migration/{vendor}
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+
+server:
+  port: ${SERVER_PORT:8080}
+  tomcat:
+    max-http-form-post-size: 2MB
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: webhookrelay
+
+webhookrelay:
+  default-ttl: ${WEBHOOKRELAY_DEFAULT_TTL:PT24H}
+  max-body-bytes: ${WEBHOOKRELAY_MAX_BODY_BYTES:1048576}   # 1 MiB cap on captured body
+  endpoint-cache-ttl: ${WEBHOOKRELAY_ENDPOINT_CACHE_TTL:PT30S}  # hot-endpoint cache window
+  expiry-sweep-interval-ms: ${WEBHOOKRELAY_SWEEP_INTERVAL_MS:60000}
+  rate-limit:
+    per-slug-burst: ${WEBHOOKRELAY_RL_SLUG_BURST:120}
+    per-slug-per-second: ${WEBHOOKRELAY_RL_SLUG_RATE:2.0}
+    per-ip-burst: ${WEBHOOKRELAY_RL_IP_BURST:300}
+    per-ip-per-second: ${WEBHOOKRELAY_RL_IP_RATE:5.0}
+  cors:
+    allowed-origins: ${WEBHOOKRELAY_CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  jwt:
+    # Dev-only placeholder. Override in staging/prod via WEBHOOKRELAY_JWT_SECRET.
+    # Must be >= 32 bytes (HS256). Generate: openssl rand -hex 32
+    secret: ${WEBHOOKRELAY_JWT_SECRET:dev-only-insecure-secret-change-me-0123456789}
+    token-ttl: ${WEBHOOKRELAY_JWT_TTL:PT12H}

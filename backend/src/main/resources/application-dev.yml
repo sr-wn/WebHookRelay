@@ -1,0 +1,4 @@
+# Dev overrides: human-readable console logs instead of JSON.
+logging:
+  level:
+    dev.webhookrelay: DEBUG

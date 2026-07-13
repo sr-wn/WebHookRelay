@@ -1,0 +1,46 @@
+groups:
+  - name: webhookrelay
+    rules:
+      # SLO: the dashboard should feel real-time. Alert if p99 receipt->broadcast
+      # latency exceeds 500ms for 5 minutes.
+      - alert: HighCaptureLatencyP99
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(webhookrelay_capture_latency_seconds_bucket[5m])) by (le)
+          ) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "p99 webhook capture->broadcast latency > 500ms"
+          description: "Real-time delivery SLO breached for 5m (current p99 {{ $value | humanizeDuration }})."
+
+      # Fan-out silently degrades if Redis is unreachable — clients on other
+      # instances stop receiving events even though HTTP capture may still work.
+      - alert: RedisConnectivityDown
+        expr: up{job="webhookrelay-backend"} == 1 and increase(spring_data_redis_commands_seconds_count[5m]) == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "No Redis command activity"
+          description: "Backend is up but issued no Redis commands in 5m — WebSocket fan-out may be broken."
+
+      # Abuse / misconfiguration signal.
+      - alert: RateLimitRejectionSpike
+        expr: sum(rate(http_server_requests_seconds_count{status="429"}[5m])) > 5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Elevated 429 rate-limit rejections"
+          description: "More than 5 req/s are being rate-limited — possible abuse of public relay endpoints."
+
+      - alert: BackendInstanceDown
+        expr: up{job="webhookrelay-backend"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "WebhookRelay backend instance down"
+          description: "A backend target has been unreachable for 2m."

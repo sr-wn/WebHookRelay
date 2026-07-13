@@ -1,0 +1,63 @@
+# Local development stack for WebhookRelay.
+# Spins up: backend (Spring Boot), frontend (React/Nginx), MySQL, Redis.
+# NOTE: this is dev-only. Prod config comes from the cloud env (see docs/architecture.md).
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpw
+      MYSQL_DATABASE: webhookrelay
+      MYSQL_USER: relay
+      MYSQL_PASSWORD: relaypw
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-prootpw"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7.4-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/webhookrelay
+      SPRING_DATASOURCE_USERNAME: relay
+      SPRING_DATASOURCE_PASSWORD: relaypw
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      WEBHOOKRELAY_CORS_ALLOWED_ORIGINS: http://localhost:5173,http://localhost:8081
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Baked at build time; for real deploys inject per-env.
+        VITE_API_BASE: http://localhost:8080
+    ports:
+      - "8081:80"
+    depends_on:
+      - backend
+
+volumes:
+  mysql-data:

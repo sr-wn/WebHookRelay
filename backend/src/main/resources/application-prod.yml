@@ -1,0 +1,11 @@
+# Prod overrides. Secrets (DB creds, JWT key) injected from the platform's
+# secrets manager as env vars — never committed. CORS must be an explicit origin.
+#
+# Works with either MySQL (AWS/compose) or Postgres (Render free tier). The driver
+# and Flyway vendor migrations are selected automatically from SPRING_DATASOURCE_URL:
+#   MySQL:    jdbc:mysql://host:3306/webhookrelay
+#   Postgres: jdbc:postgresql://host:5432/webhookrelay
+logging:
+  level:
+    root: WARN
+    dev.webhookrelay: INFO
