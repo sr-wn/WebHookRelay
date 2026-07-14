@@ -2,6 +2,7 @@ import RequestRow from "./RequestRow.jsx";
 
 export default function RequestFeed({
   requests,
+  total,
   relayUrl,
   diffIds,
   onToggleDiff,
@@ -10,7 +11,7 @@ export default function RequestFeed({
   onDiff,
   diffResult,
 }) {
-  if (requests.length === 0) {
+  if (total === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center text-center py-20">
         <code className="font-mono text-paper/90 text-lg break-all max-w-xl px-2">
@@ -30,6 +31,7 @@ export default function RequestFeed({
           Captured requests
           <span className="text-muted font-body font-normal text-sm ml-2">
             {requests.length}
+            {requests.length !== total ? ` / ${total}` : ""}
           </span>
         </h2>
         <button
@@ -42,7 +44,12 @@ export default function RequestFeed({
       </div>
 
       <div className="space-y-2.5">
-        {requests.map((r) => (
+        {requests.length === 0 ? (
+          <p className="text-muted text-sm py-6 text-center">
+            No requests match your filter.
+          </p>
+        ) : (
+          requests.map((r) => (
           <RequestRow
             key={r.id}
             req={r}
@@ -51,7 +58,8 @@ export default function RequestFeed({
             onReplay={onReplay}
             replayResult={replayResult}
           />
-        ))}
+          ))
+        )}
       </div>
 
       {diffResult && (

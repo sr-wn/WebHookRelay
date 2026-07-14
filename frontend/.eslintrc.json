@@ -7,6 +7,12 @@
   "settings": { "react": { "version": "detect" } },
   "globals": { "console": "readonly" },
   "ignorePatterns": ["dist", "node_modules"],
+  "overrides": [
+    {
+      "files": ["vite.config.js"],
+      "env": { "node": true }
+    }
+  ],
   "rules": {
     "react/react-in-jsx-scope": "off",
     "react/prop-types": "off",

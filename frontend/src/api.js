@@ -64,6 +64,13 @@ export async function fetchRequests(slug) {
   return res.json();
 }
 
+// Anonymous, ownership-free read used by shared ("?e=slug") view links.
+export async function fetchPublicRequests(slug) {
+  const res = await fetch(`${API_BASE}/api/public/endpoints/${slug}/requests`);
+  if (!res.ok) throw new Error("failed to fetch shared requests");
+  return res.json();
+}
+
 export async function replayRequest(requestId, targetUrl) {
   const res = await authFetch(`${API_BASE}/api/replay`, {
     method: "POST",

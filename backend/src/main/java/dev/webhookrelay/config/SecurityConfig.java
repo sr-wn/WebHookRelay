@@ -61,6 +61,7 @@ public class SecurityConfig {
                 .requestMatchers("/relay/**").permitAll()
                 .requestMatchers("/ws/**").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/public/**").permitAll()
                 .requestMatchers("/actuator/health/**",
                                  "/actuator/prometheus/**",
                                  "/actuator/metrics/**").permitAll()

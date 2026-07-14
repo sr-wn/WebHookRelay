@@ -5,6 +5,7 @@ import {
   API_BASE,
   createEndpoint,
   fetchRequests,
+  fetchPublicRequests,
   replayRequest,
   diffRequests,
 } from "./api.js";
@@ -21,6 +22,18 @@ export default function App() {
   const [diffResult, setDiffResult] = useState(null);
   const clientRef = useRef(null);
 
+  const loadBySlug = useCallback(async (slug) => {
+    const ep = { id: slug, slug, createdAt: null, expiresAt: null, shared: true };
+    setEndpoint(ep);
+    setRequests(await fetchPublicRequests(slug));
+  }, []);
+
+  // Opened via a shared link (?e=slug) — load read-only, no ownership.
+  useEffect(() => {
+    const slug = new URLSearchParams(window.location.search).get("e");
+    if (slug) loadBySlug(slug);
+  }, [loadBySlug]);
+
   const newEndpoint = useCallback(async () => {
     const ep = await createEndpoint();
     setEndpoint(ep);
@@ -28,6 +41,16 @@ export default function App() {
     setReplayResult(null);
     setDiffResult(null);
     setDiffIds([]);
+    history.replaceState(null, "", window.location.pathname);
+  }, []);
+
+  const goHome = useCallback(() => {
+    setEndpoint(null);
+    setRequests([]);
+    setReplayResult(null);
+    setDiffResult(null);
+    setDiffIds([]);
+    history.replaceState(null, "", window.location.pathname);
   }, []);
 
   useEffect(() => {
@@ -91,6 +114,7 @@ export default function App() {
       replayResult={replayResult}
       diffIds={diffIds}
       diffResult={diffResult}
+      onHome={goHome}
       onNew={newEndpoint}
       onReplay={onReplay}
       onToggleDiff={toggleDiff}
