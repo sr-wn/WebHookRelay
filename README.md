@@ -196,8 +196,6 @@ docker compose -f docker-compose.yml -f docker-compose.observability.yml up
 
 ### Screenshot
 
-_Add a screenshot of the running Grafana dashboard here once deployed:_
-
 ![Grafana dashboard](docs/images/grafana-dashboard.png)
 
 ## API Documentation
