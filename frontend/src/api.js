@@ -30,7 +30,7 @@ function authHeaders() {
 
 // Fetch with bearer auth; on 401 (expired token) clear it and retry once.
 async function authFetch(url, options = {}) {
-  const token = await ensureToken();
+  await ensureToken();
   let res = await fetch(url, {
     ...options,
     headers: { ...authHeaders(), ...(options.headers || {}) },

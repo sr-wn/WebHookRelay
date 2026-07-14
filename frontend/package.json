@@ -16,8 +16,11 @@
     "sockjs-client": "^1.6.1"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.3.2",
     "@vitejs/plugin-react": "^4.3.1",
     "eslint": "^8.57.0",
+    "eslint-plugin-react": "^7.37.5",
+    "tailwindcss": "^4.3.2",
     "vite": "^5.4.0"
   }
 }

@@ -8,6 +8,8 @@ import {
   replayRequest,
   diffRequests,
 } from "./api.js";
+import Landing from "./components/landing/Landing.jsx";
+import Dashboard from "./components/dashboard/Dashboard.jsx";
 
 export default function App() {
   const [endpoint, setEndpoint] = useState(null);
@@ -78,64 +80,23 @@ export default function App() {
 
   const relayUrl = endpoint ? `${API_BASE}/relay/${endpoint.slug}` : "";
 
-  return (
-    <main style={{ fontFamily: "monospace", maxWidth: 900, margin: "2rem auto", padding: "0 1rem" }}>
-      <h1>WebhookRelay</h1>
-      {!endpoint ? (
-        <button onClick={newEndpoint}>Create inspection endpoint</button>
-      ) : (
-        <>
-          <p>
-            Send requests to: <code>{relayUrl}</code>{" "}
-            <span style={{ color: connected ? "green" : "gray" }}>
-              {connected ? "● live" : "○ connecting"}
-            </span>
-          </p>
-          <button onClick={newEndpoint}>New endpoint</button>
-
-          <h2>Captured requests ({requests.length})</h2>
-
-          <p>
-            Replay target URL:{" "}
-            <input
-              value={replayTarget}
-              onChange={(e) => setReplayTarget(e.target.value)}
-              style={{ width: 320 }}
-            />
-          </p>
-
-          {requests.map((r) => (
-            <div key={r.id} style={{ border: "1px solid #ccc", padding: "0.75rem", margin: "0.5rem 0" }}>
-              <label style={{ float: "right" }}>
-                <input
-                  type="checkbox"
-                  checked={diffIds.includes(r.id)}
-                  onChange={() => toggleDiff(r.id)}
-                />{" "}
-                compare
-              </label>
-              <strong>{r.method}</strong> · {r.sourceIp} · {new Date(r.receivedAt).toLocaleTimeString()}
-              {r.bodyTruncated && <em> (truncated)</em>}
-              <pre style={{ whiteSpace: "pre-wrap", overflowX: "auto" }}>{r.body}</pre>
-              <button onClick={() => onReplay(r.id)}>Replay</button>
-              {replayResult && replayResult.requestId === r.id && (
-                <pre style={{ background: "#f6f6f6" }}>
-                  {replayResult.error ? replayResult.error : JSON.stringify(replayResult, null, 2)}
-                </pre>
-              )}
-            </div>
-          ))}
-
-          <button onClick={onDiff} disabled={diffIds.length !== 2}>
-            Diff selected ({diffIds.length}/2)
-          </button>
-          {diffResult && (
-            <pre style={{ border: "1px solid #ccc", padding: "0.75rem", background: "#f6f6f6" }}>
-              {diffResult.error ? diffResult.error : JSON.stringify(diffResult, null, 2)}
-            </pre>
-          )}
-        </>
-      )}
-    </main>
+  return endpoint ? (
+    <Dashboard
+      endpoint={endpoint}
+      connected={connected}
+      requests={requests}
+      relayUrl={relayUrl}
+      replayTarget={replayTarget}
+      setReplayTarget={setReplayTarget}
+      replayResult={replayResult}
+      diffIds={diffIds}
+      diffResult={diffResult}
+      onNew={newEndpoint}
+      onReplay={onReplay}
+      onToggleDiff={toggleDiff}
+      onDiff={onDiff}
+    />
+  ) : (
+    <Landing onCreate={newEndpoint} />
   );
 }
