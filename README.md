@@ -5,8 +5,7 @@ any HTTP request, and watch it appear live on a dashboard over WebSockets — de
 to stay correct when scaled horizontally across multiple instances.
 
 > The interesting engineering is the **horizontally-scalable WebSocket fan-out**.
-> Read [`docs/architecture.md`](docs/architecture.md) — that's the piece worth
-> explaining cold in an interview.
+> Read [`docs/architecture.md`](docs/architecture.md) 
 
 ## Architecture
 
@@ -227,18 +226,7 @@ it owns. Tokens carry a `jti` and are revocable via the shared Redis denylist.
 - RabbitMQ relay option for guaranteed delivery (vs. the current fire-and-forget pub/sub).
 - Grafana dashboard screenshot + synthetic load in CI for perf regression tracking.
 
-## Assumptions made (correct me)
 
-1. **Deploy target:** free tier → frontend on Vercel, backend + Postgres + Redis on
-   Render (deploy from CI). Infrastructure is provisioned using Render Blueprint and
-   Vercel project configuration. Render's free managed DB is Postgres, not MySQL.
-2. **STOMP relay:** Redis pub/sub bridge (not RabbitMQ) — tradeoff documented.
-3. **Default TTL:** 24h; **body cap:** 1 MiB; **rate limits:** distributed token bucket
-   (Redis Lua) — per slug burst 120 / refill 2 per s, per IP burst 300 / refill 5 per s.
-   Tunable via `WEBHOOKRELAY_RL_SLUG_BURST`/`_RATE`, `WEBHOOKRELAY_RL_IP_BURST`/`_RATE`.
-4. **Auth:** stateless JWT bearer tokens establish endpoint ownership. The frontend
-   mints a token (reusing a stored `ownerId` across reloads) and scopes all
-   `/api/**` management calls to it. Public capture (`/relay/{slug}`) and the WS
    feed stay anonymous by design (slug is the capability). Replay/diff are
    owner-scoped: a token can only act on requests captured by endpoints it owns.
 5. **Frontend** is intentionally minimal but covers the full flow: create endpoint,
