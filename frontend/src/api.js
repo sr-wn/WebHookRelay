@@ -1,5 +1,11 @@
 // API base is injected at build time (VITE_API_BASE). Falls back to same-origin.
-export const API_BASE = import.meta.env.VITE_API_BASE || "";
+// If VITE_API_BASE points at the current origin (e.g. the Vercel URL with a
+// vercel.json rewrite in place), treat it as same-origin so relative paths work.
+const rawBase = (import.meta.env.VITE_API_BASE || "").replace(/\/+$/, "");
+export const API_BASE =
+  rawBase && typeof window !== "undefined" && new URL(rawBase).origin === window.location.origin
+    ? ""
+    : rawBase;
 
 const TOKEN_KEY = "webhookrelay_token";
 const OWNER_KEY = "webhookrelay_owner";
