@@ -15,7 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.Map;
 
 /**
- * Verifies JWT auth + endpoint ownership enforcement end-to-end against real MySQL + Redis:
+ * Verifies JWT auth + endpoint ownership enforcement end-to-end against real PostgreSQL + Redis:
  * public capture works without a token, management requires one, and a token can only
  * read endpoints it created.
  */
@@ -34,9 +34,11 @@ import java.util.Map;
 class EndpointAuthIntegrationTest {
 
     @Container
-    static final MySQLContainer<?> MYSQL =
-            new MySQLContainer<>(DockerImageName.parse("mysql:8.4"))
-                    .withDatabaseName("webhookrelay");
+    static final PostgreSQLContainer<?> POSTGRES =
+            new PostgreSQLContainer<>(DockerImageName.parse("postgres:16-alpine"))
+                    .withDatabaseName("webhookrelay")
+                    .withUsername("relay")
+                    .withPassword("relaypw");
 
     @Container
     static final RedisContainer REDIS =
@@ -44,9 +46,9 @@ class EndpointAuthIntegrationTest {
 
     @DynamicPropertySource
     static void props(DynamicPropertyRegistry r) {
-        r.add("spring.datasource.url", MYSQL::getJdbcUrl);
-        r.add("spring.datasource.username", MYSQL::getUsername);
-        r.add("spring.datasource.password", MYSQL::getPassword);
+        r.add("spring.datasource.url", POSTGRES::getJdbcUrl);
+        r.add("spring.datasource.username", POSTGRES::getUsername);
+        r.add("spring.datasource.password", POSTGRES::getPassword);
         r.add("spring.data.redis.host", REDIS::getHost);
         r.add("spring.data.redis.port", REDIS::getFirstMappedPort);
     }

@@ -1,20 +1,19 @@
 # Local development stack for WebhookRelay.
-# Spins up: backend (Spring Boot), frontend (React/Nginx), MySQL, Redis.
+# Spins up: backend (Spring Boot), frontend (React/Nginx), PostgreSQL, Redis.
 # NOTE: this is dev-only. Prod config comes from the cloud env (see docs/architecture.md).
 services:
-  mysql:
-    image: mysql:8.4
+  postgres:
+    image: postgres:16-alpine
     environment:
-      MYSQL_ROOT_PASSWORD: rootpw
-      MYSQL_DATABASE: webhookrelay
-      MYSQL_USER: relay
-      MYSQL_PASSWORD: relaypw
+      POSTGRES_DB: webhookrelay
+      POSTGRES_USER: relay
+      POSTGRES_PASSWORD: relaypw
     ports:
-      - "3306:3306"
+      - "5432:5432"
     volumes:
-      - mysql-data:/var/lib/mysql
+      - pg-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-prootpw"]
+      test: ["CMD-SHELL", "pg_isready -U relay -d webhookrelay"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -34,7 +33,7 @@ services:
       context: ./backend
     environment:
       SPRING_PROFILES_ACTIVE: dev
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/webhookrelay
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/webhookrelay
       SPRING_DATASOURCE_USERNAME: relay
       SPRING_DATASOURCE_PASSWORD: relaypw
       SPRING_DATA_REDIS_HOST: redis
@@ -43,7 +42,7 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      mysql:
+      postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -60,4 +59,4 @@ services:
       - backend
 
 volumes:
-  mysql-data:
+  pg-data:

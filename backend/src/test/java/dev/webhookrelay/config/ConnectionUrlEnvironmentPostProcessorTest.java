@@ -58,6 +58,20 @@ class ConnectionUrlEnvironmentPostProcessorTest {
     }
 
     @Test
+    void preservesQueryParamsForSupabaseSsl() {
+        MockEnvironment env = new MockEnvironment();
+        env.setProperty("DATABASE_URL",
+                "postgresql://postgres.abcxyz:secret@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require");
+
+        processor.postProcessEnvironment(env, app);
+
+        assertThat(env.getProperty("spring.datasource.url"))
+                .isEqualTo("jdbc:postgresql://aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require");
+        assertThat(env.getProperty("spring.datasource.username")).isEqualTo("postgres.abcxyz");
+        assertThat(env.getProperty("spring.datasource.password")).isEqualTo("secret");
+    }
+
+    @Test
     void noopWhenNoUrlsPresent() {
         MockEnvironment env = new MockEnvironment();
 

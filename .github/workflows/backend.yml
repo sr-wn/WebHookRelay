@@ -29,6 +29,7 @@ jobs:
           cache: maven
 
       - name: Verify (compile + unit + integration tests)
+        # Docker is available on ubuntu-latest, so Testcontainers spins up real PostgreSQL + Redis.
         working-directory: backend
         run: mvn -B verify
 

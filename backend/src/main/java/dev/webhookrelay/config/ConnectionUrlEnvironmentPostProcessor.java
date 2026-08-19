@@ -60,7 +60,11 @@ public class ConnectionUrlEnvironmentPostProcessor implements EnvironmentPostPro
         String scheme = "postgres".equals(uri.getScheme()) ? "postgresql" : uri.getScheme();
         int port = uri.getPort() == -1 ? 5432 : uri.getPort();
         String path = uri.getPath() == null ? "" : uri.getPath();
-        props.put("spring.datasource.url",
-                "jdbc:%s://%s:%d%s".formatted(scheme, uri.getHost(), port, path));
+        String query = uri.getQuery();
+        String jdbcUrl = "jdbc:%s://%s:%d%s".formatted(scheme, uri.getHost(), port, path);
+        if (query != null && !query.isBlank()) {
+            jdbcUrl += "?" + query;
+        }
+        props.put("spring.datasource.url", jdbcUrl);
     }
 }

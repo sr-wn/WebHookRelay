@@ -1,19 +1,15 @@
-# Render Blueprint — free-tier live demo of WebhookRelay.
+# Render Blueprint — WebhookRelay backend + Redis.
 # Deploy: push to GitHub, then in Render → "New" → "Blueprint" and point at this repo.
 #
-# Provisions: backend (Docker web service), managed Postgres, and a managed Key Value
-# (Redis-compatible) instance for the WebSocket fan-out bus.
-# The React frontend is deployed separately to Vercel (see .github/workflows/frontend.yml).
+# Provisions: backend (Docker web service) and a managed Key Value (Redis-compatible) instance
+# for the WebSocket fan-out bus, cache, and rate-limit store.
 #
-# NOTE: Render's free managed DB is Postgres, not MySQL. The backend is portable
-# (vendor-specific Flyway migrations + Postgres driver), so this "just works". DATABASE_URL
-# and REDIS_URL are wired automatically and parsed by ConnectionUrlEnvironmentPostProcessor.
-
-databases:
-  - name: webhookrelay-db
-    plan: free
-    databaseName: webhookrelay
-    user: relay
+# Database: PostgreSQL is hosted on Supabase (free tier, no 30-day suspend).
+# Set DATABASE_URL as a secret env var in Render pointing to your Supabase connection string:
+#   postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:6543/postgres?sslmode=require
+# The app's ConnectionUrlEnvironmentPostProcessor converts it to a JDBC URL + username/password.
+#
+# The React frontend is deployed separately to Vercel (see .github/workflows/frontend.yml).
 
 services:
   # Redis-compatible fan-out bus + cache + rate-limit store.
@@ -34,12 +30,11 @@ services:
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
-      # Render's Postgres connection string (postgres://user:pass@host:port/db). The app's
-      # ConnectionUrlEnvironmentPostProcessor converts it to a jdbc URL + username/password.
+      # Supabase PostgreSQL connection string.
+      # Format: postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:6543/postgres?sslmode=require
+      # Set this as a secret env var in the Render dashboard (cannot be in blueprint for secrets).
       - key: DATABASE_URL
-        fromDatabase:
-          name: webhookrelay-db
-          property: connectionString
+        sync: false
       # Redis connection string (redis://:pass@host:port); parsed natively by Spring Boot.
       - key: REDIS_URL
         fromService:
